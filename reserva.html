@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo · Embudo de auto-reserva · Eres Lo Que No Comes</title>
+<style>
+  :root{
+    --bg:#0a0a0c; --card:#16161a; --card2:#1d1d22; --line:#2a2a2e;
+    --txt:#e9edef; --muted:#8696a0; --gold:#c9a84c; --green:#7cb342;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',system-ui,Roboto,Helvetica,Arial,sans-serif;}
+  body{background:var(--bg); min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 12px; color:var(--txt);}
+  .brand{display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; justify-content:center; text-align:center;}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--gold);}
+  .brand h1{font-size:18px; font-weight:600; color:#fff;}
+  .brand span{color:var(--muted); font-size:13px;}
+  .nota{max-width:560px; width:100%; background:var(--card); border:1px solid var(--line); border-radius:12px;
+        padding:12px 16px; margin-bottom:18px; font-size:13px; color:var(--muted); line-height:1.5;}
+  .nota b{color:var(--gold);}
+
+  .wizard{width:100%; max-width:560px; background:var(--card); border:1px solid var(--line);
+    border-radius:22px; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.6);}
+  .wtop{padding:22px 26px 16px; border-bottom:1px solid var(--line); background:linear-gradient(180deg,#1a1a1f,#16161a);}
+  .wtop .logo{display:flex; align-items:center; gap:11px; margin-bottom:14px;}
+  .wtop .leaf{width:40px;height:40px;border-radius:11px;
+    background:linear-gradient(135deg,var(--gold),#8a7330);
+    display:flex;align-items:center;justify-content:center;font-size:20px;}
+  .wtop .logo b{font-size:15.5px; color:#fff; display:block;}
+  .wtop .logo small{font-size:12px; color:var(--muted);}
+  .progress-wrap{display:flex; align-items:center; gap:12px;}
+  .bar{flex:1; height:8px; background:#26262b; border-radius:6px; overflow:hidden;}
+  .bar i{display:block; height:100%; width:16%;
+    background:linear-gradient(90deg,var(--gold),#e7c976); border-radius:6px; transition:width .4s ease;}
+  .stepnum{font-size:12px; color:var(--muted); white-space:nowrap;}
+  .stepnum b{color:var(--gold);}
+
+  .wbody{padding:26px;}
+  .step{display:none; animation:fade .35s ease;}
+  .step.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(10px);} to{opacity:1;}}
+
+  .eyebrow{color:var(--gold); font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; margin-bottom:8px;}
+  h2.title{font-size:22px; color:#fff; margin-bottom:8px; line-height:1.25;}
+  p.lead{color:var(--muted); font-size:14.5px; line-height:1.55; margin-bottom:6px;}
+  .fieldlabel{font-size:13px; color:var(--txt); font-weight:600; margin:20px 0 10px;}
+
+  .cards{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .opt{background:var(--card2); border:1.5px solid var(--line); border-radius:14px; padding:14px;
+    cursor:pointer; transition:.15s; display:flex; gap:11px; align-items:flex-start;}
+  .opt:hover{border-color:#3a3a42; transform:translateY(-1px);}
+  .opt.sel{border-color:var(--gold); background:rgba(201,168,76,.08); box-shadow:0 0 0 1px var(--gold) inset;}
+  .opt .ic{font-size:22px; line-height:1;}
+  .opt .tt{font-size:14px; font-weight:600; color:#fff;}
+  .opt .ds{font-size:12px; color:var(--muted); margin-top:2px; line-height:1.35;}
+
+  .priceblock{text-align:center; background:linear-gradient(180deg,#1c1c22,#16161a);
+    border:1.5px solid var(--gold); border-radius:18px; padding:26px 20px; margin:20px 0;}
+  .priceblock .euro{font-size:52px; font-weight:800; color:var(--gold); line-height:1;}
+  .priceblock .euro small{font-size:24px;}
+  .priceblock .sub{color:var(--muted); font-size:13.5px; margin-top:8px;}
+  .breakdown{margin-top:18px; border-top:1px solid var(--line); padding-top:16px;}
+  .brow{display:flex; justify-content:space-between; font-size:14px; padding:7px 0; color:var(--txt);}
+  .brow span:last-child{color:#fff; font-weight:600;}
+  .brow.muted span{color:var(--muted); font-weight:400;}
+  .brow.total{border-top:1px solid var(--line); margin-top:6px; padding-top:13px; font-size:16px;}
+  .brow.total span:last-child{color:var(--gold); font-weight:800;}
+  .ruletag{display:inline-block; font-size:11px; color:var(--muted); background:#22222a;
+    border:1px solid var(--line); border-radius:7px; padding:3px 9px; margin-top:14px;}
+
+  .nutri{display:flex; gap:14px; align-items:center; background:var(--card2);
+    border:1.5px solid var(--gold); border-radius:16px; padding:16px 18px; margin:18px 0;}
+  .nutri .ava{width:54px;height:54px;border-radius:50%; flex:none;
+    background:linear-gradient(135deg,var(--gold),#8a7330);
+    display:flex;align-items:center;justify-content:center;font-weight:700;color:#1a1a1a;font-size:19px;}
+  .nutri b{color:#fff; font-size:16px; display:block;}
+  .nutri small{color:var(--muted); font-size:12.5px;}
+  .nutri .esp{color:var(--gold); font-size:12px; font-weight:600; margin-top:3px;}
+
+  .slots{display:grid; grid-template-columns:repeat(3,1fr); gap:9px; margin-top:8px;}
+  .slot{background:var(--card2); border:1.5px solid var(--line); border-radius:11px;
+    padding:11px 6px; text-align:center; cursor:pointer; transition:.15s;}
+  .slot:hover{border-color:#3a3a42;}
+  .slot.sel{border-color:var(--gold); background:rgba(201,168,76,.1); box-shadow:0 0 0 1px var(--gold) inset;}
+  .slot .d{font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em;}
+  .slot .h{font-size:15px; font-weight:700; color:#fff; margin-top:3px;}
+
+  .paytabs{display:flex; gap:9px; margin:18px 0 14px;}
+  .paytab{flex:1; background:var(--card2); border:1.5px solid var(--line); border-radius:12px;
+    padding:13px; text-align:center; cursor:pointer; transition:.15s; font-size:13.5px; font-weight:600; color:var(--txt);}
+  .paytab:hover{border-color:#3a3a42;}
+  .paytab.sel{border-color:var(--gold); background:rgba(201,168,76,.08); color:#fff; box-shadow:0 0 0 1px var(--gold) inset;}
+  .paytab .pic{font-size:22px; display:block; margin-bottom:5px;}
+  .payinfo{background:var(--card2); border:1px solid var(--line); border-radius:13px; padding:16px; font-size:13.5px; color:var(--muted); line-height:1.6;}
+  .payinfo b{color:#fff;}
+  .payinfo .amount{color:var(--gold); font-weight:800; font-size:20px;}
+  .fakefield{background:#101014; border:1px solid var(--line); border-radius:10px; padding:11px 13px;
+    color:var(--muted); font-size:13.5px; margin-top:9px; display:flex; justify-content:space-between; align-items:center;}
+  .fakefield .lock{color:var(--green); font-size:12px;}
+
+  .confirm{text-align:center;}
+  .checkwrap{width:84px;height:84px;border-radius:50%; margin:6px auto 16px;
+    background:rgba(124,179,66,.15); border:2px solid var(--green);
+    display:flex;align-items:center;justify-content:center; animation:pop .5s ease;}
+  .checkwrap .ck{color:var(--green); font-size:44px; line-height:1;}
+  @keyframes pop{0%{transform:scale(.4); opacity:0;} 60%{transform:scale(1.12);} 100%{transform:scale(1); opacity:1;}}
+  .summary{text-align:left; background:var(--card2); border:1px solid var(--line); border-radius:15px; padding:6px 18px; margin:18px 0;}
+  .srow{display:flex; justify-content:space-between; gap:14px; padding:12px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .srow:last-child{border-bottom:none;}
+  .srow span:first-child{color:var(--muted);}
+  .srow span:last-child{color:#fff; font-weight:600; text-align:right;}
+  .srow .paid{color:var(--green);}
+  .successnote{background:rgba(124,179,66,.1); border:1px solid rgba(124,179,66,.4); border-radius:13px;
+    padding:14px 16px; font-size:13.5px; color:#cfe9c0; line-height:1.55;}
+  .successnote b{color:var(--green);}
+
+  .nav{display:flex; justify-content:space-between; gap:12px; margin-top:24px;}
+  .btn{border:none; border-radius:12px; padding:14px 26px; font-size:15px; font-weight:700; cursor:pointer; transition:.15s;}
+  .btn-next{background:linear-gradient(135deg,var(--gold),#e7c976); color:#1a1a1a; flex:1;}
+  .btn-next:hover{filter:brightness(1.06); transform:translateY(-1px);}
+  .btn-next:disabled{opacity:.4; cursor:not-allowed; transform:none; filter:none;}
+  .btn-back{background:transparent; border:1.5px solid var(--line); color:var(--muted);}
+  .btn-back:hover{border-color:#3a3a42; color:var(--txt);}
+  .btn-pay{background:linear-gradient(135deg,var(--green),#9ccc65); color:#10210a; flex:1;}
+  .btn-pay:hover{filter:brightness(1.06); transform:translateY(-1px);}
+  .hint{font-size:11.5px; color:#555; text-align:center; margin-top:10px;}
+
+  .footer{max-width:560px;width:100%;text-align:center;color:#555;font-size:11px;margin-top:18px; line-height:1.5;}
+
+  @media (max-width:480px){
+    .cards{grid-template-columns:1fr;}
+    .slots{grid-template-columns:repeat(2,1fr);}
+    .wbody{padding:20px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="brand">
+    <div class="dot"></div>
+    <h1>Iberia Growth</h1>
+    <span>· Demo del embudo de auto-reserva para Eres Lo Que No Comes</span>
+  </div>
+
+  <div class="nota">
+    👋 Esto es una <b>recreación</b> del segundo embudo de tu web: el paciente que llega <b>ya decidido</b> reserva su primera consulta solo,
+    sin pasar por tu llamada de venta. Elige objetivo y modalidad, ve el <b>precio calculado</b>, se le asigna la nutricionista por especialidad,
+    escoge hueco, paga (con <b>Bizum</b>) y la cita entra en el sistema <b>sin que tú toques nada</b>. Pulsa <b>Siguiente</b> para recorrerlo.
+  </div>
+
+  <div class="wizard">
+    <div class="wtop">
+      <div class="logo">
+        <div class="leaf">🥗</div>
+        <div>
+          <b>Eres Lo Que No Comes</b>
+          <small>Clínica de nutrición · Madrid · Reserva online</small>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <div class="bar"><i id="bar"></i></div>
+        <div class="stepnum">Paso <b id="curstep">1</b> de 6</div>
+      </div>
+    </div>
+
+    <div class="wbody">
+
+      <!-- PASO 1 -->
+      <div class="step active" data-step="1">
+        <div class="eyebrow">Bienvenida</div>
+        <h2 class="title">Reserva tu primera consulta en Eres Lo Que No Comes</h2>
+        <p class="lead">En menos de 2 minutos eliges tu objetivo, ves el precio, escoges el hueco que mejor te venga y confirmas tu cita. Sin llamadas, sin esperas.</p>
+        <p class="lead" style="margin-top:14px;">Te asignaremos automáticamente a la nutricionista especializada en tu caso. 💛</p>
+        <div class="nav">
+          <span></span>
+          <button class="btn btn-next" data-go="2">Empezar reserva →</button>
+        </div>
+      </div>
+
+      <!-- PASO 2 -->
+      <div class="step" data-step="2">
+        <div class="eyebrow">Cuestionario de cualificación</div>
+        <h2 class="title">¿Qué te trae a consulta?</h2>
+        <p class="lead">Esto nos ayuda a asignarte a la profesional adecuada y preparar tu primera sesión.</p>
+
+        <div class="fieldlabel">Tu objetivo principal</div>
+        <div class="cards" id="objs">
+          <div class="opt" data-obj="peso" data-label="Perder peso"><div class="ic">⚖️</div><div><div class="tt">Perder peso</div><div class="ds">Plan para bajar de forma saludable</div></div></div>
+          <div class="opt" data-obj="deportiva" data-label="Nutrición deportiva"><div class="ic">🏃</div><div><div class="tt">Nutrición deportiva</div><div class="ds">Rendimiento y composición corporal</div></div></div>
+          <div class="opt" data-obj="digestivo" data-label="Problema digestivo"><div class="ic">🌿</div><div><div class="tt">Problema digestivo</div><div class="ds">Hinchazón, SII, intolerancias…</div></div></div>
+          <div class="opt" data-obj="embarazo" data-label="Embarazo / lactancia"><div class="ic">🤰</div><div><div class="tt">Embarazo / lactancia</div><div class="ds">Nutrición en esta etapa</div></div></div>
+          <div class="opt" data-obj="menopausia" data-label="Menopausia"><div class="ic">🌸</div><div><div class="tt">Menopausia</div><div class="ds">Cambios hormonales y peso</div></div></div>
+        </div>
+
+        <div class="fieldlabel">Modalidad de la consulta</div>
+        <div class="cards" id="mods">
+          <div class="opt" data-mod="montecarmelo" data-label="Presencial · Montecarmelo"><div class="ic">📍</div><div><div class="tt">Presencial · Montecarmelo</div><div class="ds">En nuestra clínica de Montecarmelo</div></div></div>
+          <div class="opt" data-mod="mirasierra" data-label="Presencial · Mirasierra"><div class="ic">📍</div><div><div class="tt">Presencial · Mirasierra</div><div class="ds">En nuestra clínica de Mirasierra</div></div></div>
+          <div class="opt" data-mod="online" data-label="Online"><div class="ic">💻</div><div><div class="tt">Online</div><div class="ds">Por videollamada, desde casa</div></div></div>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-back" data-go="1">← Atrás</button>
+          <button class="btn btn-next" id="next2" data-go="3" disabled>Ver mi precio →</button>
+        </div>
+        <div class="hint">Selecciona objetivo y modalidad para continuar</div>
+      </div>
+
+      <!-- PASO 3 -->
+      <div class="step" data-step="3">
+        <div class="eyebrow">Tu precio</div>
+        <h2 class="title">Precio calculado para tu caso</h2>
+        <p class="lead">El precio se calcula según el objetivo y la modalidad que has elegido.</p>
+
+        <div class="priceblock">
+          <div class="euro" id="bigprice">65<small>€</small></div>
+          <div class="sub">Primera consulta + plan nutricional personalizado</div>
+        </div>
+
+        <div class="breakdown">
+          <div class="brow"><span>Primera consulta + plan</span><span id="bd-base">65 €</span></div>
+          <div class="brow muted" id="bd-modrow"><span id="bd-modlabel">Modalidad</span><span id="bd-mod">+0 €</span></div>
+          <div class="brow muted"><span>Seguimiento recomendado (bono 3 sesiones)</span><span id="bd-bono">105 €</span></div>
+          <div class="brow total"><span>A pagar hoy (1ª consulta)</span><span id="bd-total">65 €</span></div>
+        </div>
+        <div class="ruletag" id="ruletag">📋 Regla aplicada: objetivo + modalidad</div>
+        <p class="lead" style="margin-top:14px; font-size:13px;">Hoy reservas y pagas solo tu <b style="color:#fff;">primera consulta</b>. El bono de seguimiento es opcional y lo decides con tu nutricionista.</p>
+
+        <div class="nav">
+          <button class="btn btn-back" data-go="2">← Atrás</button>
+          <button class="btn btn-next" data-go="4">Elegir hueco →</button>
+        </div>
+      </div>
+
+      <!-- PASO 4 -->
+      <div class="step" data-step="4">
+        <div class="eyebrow">Tu nutricionista y agenda</div>
+        <h2 class="title">Te hemos asignado a tu especialista</h2>
+        <p class="lead">Según tu objetivo, te asignamos automáticamente a la nutricionista especializada.</p>
+
+        <div class="nutri">
+          <div class="ava" id="nutri-ini">CV</div>
+          <div>
+            <b id="nutri-name">Cristina / Victoria</b>
+            <small id="nutri-mod">Presencial · Montecarmelo</small>
+            <div class="esp" id="nutri-esp">Especialista en salud digestiva</div>
+          </div>
+        </div>
+
+        <div class="fieldlabel">Elige día y hora</div>
+        <div class="slots" id="slots">
+          <div class="slot" data-slot="Lun 16 jun · 10:00"><div class="d">Lun 16 jun</div><div class="h">10:00</div></div>
+          <div class="slot" data-slot="Lun 16 jun · 17:30"><div class="d">Lun 16 jun</div><div class="h">17:30</div></div>
+          <div class="slot" data-slot="Mié 18 jun · 11:00"><div class="d">Mié 18 jun</div><div class="h">11:00</div></div>
+          <div class="slot" data-slot="Mié 18 jun · 18:00"><div class="d">Mié 18 jun</div><div class="h">18:00</div></div>
+          <div class="slot" data-slot="Vie 20 jun · 09:30"><div class="d">Vie 20 jun</div><div class="h">09:30</div></div>
+          <div class="slot" data-slot="Vie 20 jun · 12:30"><div class="d">Vie 20 jun</div><div class="h">12:30</div></div>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-back" data-go="3">← Atrás</button>
+          <button class="btn btn-next" id="next4" data-go="5" disabled>Ir al pago →</button>
+        </div>
+        <div class="hint">Selecciona un hueco para continuar</div>
+      </div>
+
+      <!-- PASO 5 -->
+      <div class="step" data-step="5">
+        <div class="eyebrow">Pago</div>
+        <h2 class="title">Confirma tu reserva con el pago</h2>
+        <p class="lead">Elige cómo prefieres pagar tu primera consulta. Tu hueco queda reservado al confirmar.</p>
+
+        <div class="paytabs" id="paytabs">
+          <div class="paytab sel" data-pay="bizum"><span class="pic">📲</span>Bizum</div>
+          <div class="paytab" data-pay="transferencia"><span class="pic">🏦</span>Transferencia</div>
+          <div class="paytab" data-pay="tarjeta"><span class="pic">💳</span>Tarjeta</div>
+        </div>
+
+        <div class="payinfo" id="payinfo">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span>Importe a pagar hoy</span>
+            <span class="amount" id="pay-amount">65 €</span>
+          </div>
+          <div id="pay-body">
+            Pagarás cómodamente por <b>Bizum</b> al número de la clínica. Es inmediato y sin comisiones.
+            <div class="fakefield"><span>Bizum a: <b style="color:#fff;">Eres Lo Que No Comes · 6XX XXX XXX</b></span><span class="lock">🔒 seguro</span></div>
+            <div class="fakefield"><span>Concepto: <b style="color:#fff;" id="pay-concept">1ª consulta nutrición</b></span></div>
+          </div>
+        </div>
+
+        <div class="nav">
+          <button class="btn btn-back" data-go="4">← Atrás</button>
+          <button class="btn btn-pay" data-go="6">Pagar y confirmar 🔒</button>
+        </div>
+        <div class="hint">Pago simulado · esta es una demo, no se cobra nada</div>
+      </div>
+
+      <!-- PASO 6 -->
+      <div class="step" data-step="6">
+        <div class="confirm">
+          <div class="checkwrap"><div class="ck">✓</div></div>
+          <div class="eyebrow" style="color:var(--green);">Reserva confirmada</div>
+          <h2 class="title">¡Reserva confirmada! 🎉</h2>
+          <p class="lead">Tu cita ya está agendada. Te hemos enviado la confirmación por email y recibirás un recordatorio antes.</p>
+
+          <div class="summary">
+            <div class="srow"><span>Servicio</span><span id="r-serv">1ª consulta · Perder peso</span></div>
+            <div class="srow"><span>Modalidad</span><span id="r-mod">Presencial · Montecarmelo</span></div>
+            <div class="srow"><span>Nutricionista</span><span id="r-nutri">Cristina / Victoria</span></div>
+            <div class="srow"><span>Día y hora</span><span id="r-slot">Lun 16 jun · 10:00</span></div>
+            <div class="srow"><span>Pago (<span id="r-method">Bizum</span>)</span><span class="paid" id="r-amount">65 € pagado ✓</span></div>
+          </div>
+
+          <div class="successnote">
+            ✅ <b>La cita ya entró en el sistema</b> de forma automática, sin que Miriam ni el equipo tuvieran que tocar nada.
+            Sin llamada de venta, sin gestión manual: el paciente reservó y pagó solo, y la agenda se actualizó al instante.
+          </div>
+
+          <div class="nav">
+            <button class="btn btn-back" data-go="1" style="flex:1;">↺ Volver a empezar la demo</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer">Demo · Iberia Growth · No es el sistema real, es una recreación para mostrar el funcionamiento.</div>
+
+<script>
+// ---- Estado de la reserva ----
+const state = { obj:null, objLabel:null, mod:null, modLabel:null, slot:null, pay:'bizum', payLabel:'Bizum', base:65, modExtra:0, bono:105 };
+
+// Reglas de precio por objetivo (base 1ª consulta)
+const OBJ_BASE = { peso:65, deportiva:75, digestivo:70, embarazo:70, menopausia:70 };
+// Bono de seguimiento recomendado (3 sesiones) por objetivo
+const OBJ_BONO = { peso:105, deportiva:120, digestivo:120, embarazo:110, menopausia:110 };
+// Modalidad: online con pequeño descuento, presencial sin recargo
+const MOD_EXTRA = { montecarmelo:0, mirasierra:0, online:-5 };
+
+// Asignación de nutricionista por especialidad
+const NUTRI = {
+  deportiva:  { name:'Ana',               ini:'A',  esp:'Especialista en nutrición deportiva' },
+  digestivo:  { name:'Cristina / Victoria',ini:'CV', esp:'Especialistas en salud digestiva' },
+  embarazo:   { name:'Cristina',          ini:'C',  esp:'Especialista en embarazo y lactancia' },
+  peso:       { name:'Victoria',          ini:'V',  esp:'Especialista en pérdida de peso' },
+  menopausia: { name:'Cristina',          ini:'C',  esp:'Especialista en menopausia' }
+};
+
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const steps = $$('.step');
+const bar = $('#bar');
+const curstep = $('#curstep');
+
+function show(n){
+  steps.forEach(s => s.classList.toggle('active', +s.dataset.step === n));
+  bar.style.width = (n/6*100) + '%';
+  curstep.textContent = n;
+  if(n===3) renderPrice();
+  if(n===4) renderNutri();
+  if(n===5) renderPay();
+  if(n===6) renderConfirm();
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// Navegación
+document.body.addEventListener('click', e=>{
+  const btn = e.target.closest('[data-go]');
+  if(btn){ show(+btn.dataset.go); }
+});
+
+// PASO 2: selección de objetivo
+$('#objs').addEventListener('click', e=>{
+  const o = e.target.closest('.opt'); if(!o) return;
+  $$('#objs .opt').forEach(x=>x.classList.remove('sel'));
+  o.classList.add('sel');
+  state.obj = o.dataset.obj; state.objLabel = o.dataset.label;
+  checkStep2();
+});
+$('#mods').addEventListener('click', e=>{
+  const o = e.target.closest('.opt'); if(!o) return;
+  $$('#mods .opt').forEach(x=>x.classList.remove('sel'));
+  o.classList.add('sel');
+  state.mod = o.dataset.mod; state.modLabel = o.dataset.label;
+  checkStep2();
+});
+function checkStep2(){ $('#next2').disabled = !(state.obj && state.mod); }
+
+// PASO 3: cálculo de precio
+function renderPrice(){
+  state.base = OBJ_BASE[state.obj] || 65;
+  state.bono = OBJ_BONO[state.obj] || 105;
+  state.modExtra = MOD_EXTRA[state.mod] || 0;
+  const total = state.base + state.modExtra;
+  $('#bigprice').innerHTML = total + '<small>€</small>';
+  $('#bd-base').textContent = state.base + ' €';
+  $('#bd-modlabel').textContent = state.modLabel;
+  $('#bd-mod').textContent = (state.modExtra>=0?'+':'') + state.modExtra + ' €' + (state.modExtra<0?' (online)':'');
+  $('#bd-bono').textContent = state.bono + ' €';
+  $('#bd-total').textContent = total + ' €';
+  $('#ruletag').textContent = '📋 Regla: ' + state.objLabel + ' · ' + state.modLabel;
+}
+function totalHoy(){ return state.base + state.modExtra; }
+
+// PASO 4: nutricionista + agenda
+function renderNutri(){
+  const n = NUTRI[state.obj] || NUTRI.peso;
+  $('#nutri-ini').textContent = n.ini;
+  $('#nutri-name').textContent = n.name;
+  $('#nutri-mod').textContent = state.modLabel;
+  $('#nutri-esp').textContent = n.esp;
+}
+$('#slots').addEventListener('click', e=>{
+  const s = e.target.closest('.slot'); if(!s) return;
+  $$('#slots .slot').forEach(x=>x.classList.remove('sel'));
+  s.classList.add('sel');
+  state.slot = s.dataset.slot;
+  $('#next4').disabled = false;
+});
+
+// PASO 5: pago
+$('#paytabs').addEventListener('click', e=>{
+  const t = e.target.closest('.paytab'); if(!t) return;
+  $$('#paytabs .paytab').forEach(x=>x.classList.remove('sel'));
+  t.classList.add('sel');
+  state.pay = t.dataset.pay;
+  state.payLabel = t.textContent.trim();
+  renderPay();
+});
+function renderPay(){
+  $('#pay-amount').textContent = totalHoy() + ' €';
+  const body = $('#pay-body');
+  if(state.pay==='bizum'){
+    body.innerHTML = 'Pagarás cómodamente por <b>Bizum</b> al número de la clínica. Es inmediato y sin comisiones.'
+      + '<div class="fakefield"><span>Bizum a: <b style="color:#fff;">Eres Lo Que No Comes · 6XX XXX XXX</b></span><span class="lock">🔒 seguro</span></div>'
+      + '<div class="fakefield"><span>Concepto: <b style="color:#fff;">1ª consulta nutrición</b></span></div>';
+  } else if(state.pay==='transferencia'){
+    body.innerHTML = 'Pagarás por <b>transferencia bancaria</b>. Te mostramos el IBAN y el concepto; tu hueco queda reservado.'
+      + '<div class="fakefield"><span>IBAN: <b style="color:#fff;">ES** **** **** **** **** ****</b></span><span class="lock">🔒 seguro</span></div>'
+      + '<div class="fakefield"><span>Concepto: <b style="color:#fff;">1ª consulta nutrición</b></span></div>';
+  } else {
+    body.innerHTML = 'Pagarás con <b>tarjeta</b> de forma segura.'
+      + '<div class="fakefield"><span>Nº tarjeta: <b style="color:#fff;">**** **** **** 4242</b></span><span class="lock">🔒 seguro</span></div>'
+      + '<div class="fakefield"><span>Caduca: <b style="color:#fff;">06/29</b> · CVV: <b style="color:#fff;">***</b></span></div>';
+  }
+}
+
+// PASO 6: confirmación
+function renderConfirm(){
+  const n = NUTRI[state.obj] || NUTRI.peso;
+  $('#r-serv').textContent = '1ª consulta · ' + state.objLabel;
+  $('#r-mod').textContent = state.modLabel;
+  $('#r-nutri').textContent = n.name;
+  $('#r-slot').textContent = state.slot;
+  $('#r-method').textContent = state.payLabel;
+  $('#r-amount').textContent = totalHoy() + ' € pagado ✓';
+}
+
+// init
+show(1);
+</script>
+</body>
+</html>
