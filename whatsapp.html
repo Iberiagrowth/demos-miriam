@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo · Asistente WhatsApp · Eres Lo Que No Comes (Miriam)</title>
+<style>
+  :root{
+    --wa-bg:#0b141a; --wa-header:#202c33; --in:#202c33; --out:#005c4b;
+    --txt:#e9edef; --muted:#8696a0; --gold:#c9a84c; --accent:#00a884;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',system-ui,Roboto,Helvetica,Arial,sans-serif;}
+  body{background:#0a0a0c; min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 12px; color:var(--txt);}
+  .brand{display:flex; align-items:center; gap:12px; margin-bottom:18px;}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--gold);}
+  .brand h1{font-size:18px; font-weight:600; color:#fff;}
+  .brand span{color:var(--muted); font-size:13px;}
+  .nota{max-width:430px; width:100%; background:#16161a; border:1px solid #2a2a2e; border-radius:12px;
+        padding:12px 16px; margin-bottom:16px; font-size:13px; color:var(--muted); line-height:1.5;}
+  .nota b{color:var(--gold);}
+  .phone{width:100%; max-width:430px; height:760px; background:var(--wa-bg);
+    border-radius:28px; overflow:hidden; box-shadow:0 24px 60px rgba(0,0,0,.6);
+    border:1px solid #1f2a30; display:flex; flex-direction:column;}
+  .header{background:var(--wa-header); padding:14px 16px; display:flex; align-items:center; gap:12px;}
+  .avatar{width:42px;height:42px;border-radius:50%;
+    background:linear-gradient(135deg,var(--gold),#8a7330);
+    display:flex;align-items:center;justify-content:center;font-weight:700;color:#1a1a1a; font-size:13px;}
+  .header .info{flex:1;}
+  .header .name{font-weight:600; font-size:16px;}
+  .header .status{font-size:12px; color:var(--accent);}
+  .header .ico{color:var(--muted); font-size:18px;}
+  .chat{flex:1; overflow-y:auto; padding:18px 14px; background:rgba(11,20,26,.96);
+    display:flex; flex-direction:column; gap:8px;}
+  .day{align-self:center; background:#182229; color:var(--muted); font-size:12px;
+    padding:5px 12px; border-radius:8px; margin:4px 0 8px;}
+  .sys{align-self:center; background:#1d2a26; color:#cfe9df; font-size:12px;
+    padding:8px 14px; border-radius:10px; text-align:center; max-width:92%; line-height:1.4; border:1px solid #224;}
+  .msg{max-width:80%; padding:8px 12px; border-radius:10px; font-size:14.5px; line-height:1.45;
+    position:relative; white-space:pre-wrap; word-wrap:break-word; animation:pop .18s ease;}
+  .in{align-self:flex-start; background:var(--in); border-top-left-radius:2px;}
+  .out{align-self:flex-end; background:var(--out); border-top-right-radius:2px;}
+  .msg .t{display:block; font-size:10.5px; color:rgba(233,237,239,.6); text-align:right; margin-top:3px;}
+  .badge{display:inline-block; font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; margin-bottom:5px;}
+  .b-cita{background:#27ae60; color:#fff;}
+  .b-info{background:#2980b9; color:#fff;}
+  .b-pers{background:var(--gold); color:#1a1a1a;}
+  .b-seg{background:#8e44ad; color:#fff;}
+  @keyframes pop{from{opacity:0; transform:translateY(6px) scale(.98);} to{opacity:1;}}
+  .typing{align-self:flex-start; background:var(--in); border-radius:10px; padding:12px 14px; display:none;}
+  .typing.show{display:block;}
+  .typing span{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--muted);margin:0 2px;animation:blink 1.2s infinite;}
+  .typing span:nth-child(2){animation-delay:.2s;}
+  .typing span:nth-child(3){animation-delay:.4s;}
+  @keyframes blink{0%,60%,100%{opacity:.3;}30%{opacity:1;}}
+  .inputbar{background:var(--wa-header); padding:10px 12px; display:flex; gap:8px; align-items:center;}
+  .inputbar input{flex:1; background:var(--in); border:none; outline:none; color:var(--txt);
+    padding:11px 16px; border-radius:22px; font-size:14.5px;}
+  .inputbar button{background:var(--accent); border:none; width:44px;height:44px;border-radius:50%;
+    color:#fff; font-size:18px; cursor:pointer; display:flex;align-items:center;justify-content:center;}
+  .inputbar button:active{transform:scale(.92);}
+  .quick{display:flex; gap:8px; flex-wrap:wrap; padding:8px 12px 0; max-width:430px; width:100%;}
+  .quick button{background:#16161a; border:1px solid var(--gold); color:var(--gold);
+    padding:7px 13px; border-radius:18px; font-size:12.5px; cursor:pointer; transition:.15s;}
+  .quick button:hover{background:var(--gold); color:#1a1a1a;}
+  .footer{max-width:430px;width:100%;text-align:center;color:#555;font-size:11px;margin-top:14px;}
+</style>
+</head>
+<body>
+
+  <div class="brand">
+    <div class="dot"></div>
+    <h1>Iberia Growth</h1>
+    <span>· Demo del asistente para Eres Lo Que No Comes (Miriam)</span>
+  </div>
+
+  <div class="nota">
+    👋 Esto es una <b>recreación</b> del asistente que atenderá tu WhatsApp con la <b>API oficial de WhatsApp Business (Meta)</b> — tu número nunca corre riesgo de bloqueo.
+    El bot hace lo repetitivo (informar, agendar, dar seguimiento) y <b>deriva a tu equipo</b> lo personal. Escribe como lo haría un paciente: pide cita, pregunta precios, di <b>"me lo tengo que pensar"</b> y mira el <b>seguimiento automático</b>.
+  </div>
+
+  <div class="phone">
+    <div class="header">
+      <div class="avatar">ELQ</div>
+      <div class="info">
+        <div class="name">Eres Lo Que No Comes</div>
+        <div class="status">en línea · responde al instante</div>
+      </div>
+      <div class="ico">⋮</div>
+    </div>
+
+    <div class="chat" id="chat">
+      <div class="day">HOY</div>
+      <div class="sys">💬 Un paciente escribe por WhatsApp. El asistente le atiende, le tría por especialidad y agenda con la nutricionista que toca — sin que Miriam sea el cuello de botella.</div>
+    </div>
+
+    <div class="typing" id="typing"><span></span><span></span><span></span></div>
+
+    <div class="inputbar">
+      <input id="input" type="text" placeholder="Escribe un mensaje" autocomplete="off">
+      <button id="send">➤</button>
+    </div>
+  </div>
+
+  <div class="quick" id="quick">
+    <button data-q="Hola, quería pedir cita">📅 Pedir cita</button>
+    <button data-q="¿Cuánto cuesta la primera consulta?">💶 Precios</button>
+    <button data-q="Me lo tengo que pensar">🤔 "Me lo pienso" (seguimiento)</button>
+    <button data-q="Busco nutrición deportiva">🏃 Nutrición deportiva</button>
+    <button data-q="Estoy embarazada y quiero llevar la alimentación">🤰 Embarazo/lactancia</button>
+    <button data-q="Quiero hablar con una persona">🙋 Hablar con una persona</button>
+  </div>
+
+  <div class="footer">Demo · Iberia Growth · No es el sistema real, es una recreación para mostrar el funcionamiento.</div>
+
+<script>
+const chat=document.getElementById('chat'), typing=document.getElementById('typing'),
+      input=document.getElementById('input'), send=document.getElementById('send');
+function ahora(){const d=new Date();return d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');}
+function scroll(){chat.scrollTop=chat.scrollHeight;}
+function addUser(t){const m=document.createElement('div');m.className='msg out';
+  m.innerHTML=t.replace(/</g,'&lt;')+'<span class="t">'+ahora()+' ✓✓</span>';chat.appendChild(m);scroll();}
+function addBot(html,badge){const m=document.createElement('div');m.className='msg in';let b='';
+  if(badge==='cita') b='<span class="badge b-cita">CITA AGENDADA</span><br>';
+  if(badge==='info') b='<span class="badge b-info">INFORMACIÓN</span><br>';
+  if(badge==='pers') b='<span class="badge b-pers">TE PASO CON EL EQUIPO</span><br>';
+  if(badge==='seg')  b='<span class="badge b-seg">SEGUIMIENTO AUTOMÁTICO</span><br>';
+  m.innerHTML=b+html+'<span class="t">'+ahora()+'</span>';chat.appendChild(m);scroll();}
+function addSys(t){const s=document.createElement('div');s.className='sys';s.innerHTML=t;chat.appendChild(s);scroll();}
+
+function responder(txt){
+  const t=txt.toLowerCase(); const has=(...w)=>w.some(x=>t.includes(x));
+
+  // "ME LO PIENSO" — SEGUIMIENTO AUTOMÁTICO (lo diferencial de Miriam)
+  if(has('me lo pienso','me lo tengo que pensar','tengo que pensar','déjame pensar','dejame pensar','lo pienso','me lo miro','ya te digo','luego te digo','lo consulto','tengo que mirar')){
+    return {badge:'seg',
+      sys:'🔁 Si no cierra, el sistema le hará seguimiento automático en unas horas y de nuevo al día siguiente — sin que tú toques nada. Es justo el lead "en caliente" que hoy se pierde.',
+      followup:true,
+      html:'¡Claro, tómate tu tiempo! 😊 Es una decisión importante para tu salud y no hay ninguna prisa.\n\nTe dejo apuntado tu interés. Si te surge cualquier duda, aquí estoy. 💛'};
+  }
+  // NUTRICIÓN DEPORTIVA → Ana
+  if(has('deportiv','deporte','rendimiento','gimnasio','musculación','musculacion','entreno','maratón','maraton','crossfit','correr','runner')){
+    return {badge:'cita', sys:'🎯 El asistente tría por especialidad y asigna a la nutricionista deportiva (Ana).',
+      html:'¡Genial! 🏃 Para <b>nutrición deportiva</b> y rendimiento te atiende <b>Ana</b>, nuestra especialista en esa área.\n\nTengo estos huecos con Ana:\n• <b>Martes 18:00</b>\n• <b>Jueves 10:30</b>\n\n¿Cuál te viene mejor? Dime tu <b>nombre</b> y te la dejo agendada con ella.'};
+  }
+  // EMBARAZO / LACTANCIA → Cristina
+  if(has('embaraz','lactancia','dando el pecho','gestación','gestacion','prenatal','semanas de embarazo','postparto','posparto')){
+    return {badge:'cita', sys:'🤰 Embarazo y lactancia es un área sensible: el asistente la asigna directamente a Cristina (la especialista).',
+      html:'¡Enhorabuena! 🤰 Para <b>embarazo y lactancia</b> te lleva <b>Cristina</b>, que es nuestra especialista en esta etapa.\n\nHuecos con Cristina:\n• <b>Miércoles 11:00</b>\n• <b>Viernes 17:00</b>\n\n¿Cuál prefieres? Dame tu <b>nombre</b> y te la reservo con ella.'};
+  }
+  // DIGESTIVO → Cristina / Victoria
+  if(has('digestiv','intestino','colon','hinchazón','hinchazon','sibo','reflujo','estómago','estomago','intolerancia','gases','barriga')){
+    return {badge:'cita', sys:'🎯 Triaje por especialidad: lo digestivo se asigna a Cristina o Victoria.',
+      html:'Entiendo. 🩺 Para temas <b>digestivos</b> te atienden <b>Cristina</b> o <b>Victoria</b>, nuestras especialistas en esa área.\n\nPrimer hueco disponible con ellas:\n• <b>Lunes 16:30</b> (Victoria)\n• <b>Jueves 12:00</b> (Cristina)\n\nDime tu <b>nombre</b> y con cuál prefieres, y te lo dejo agendado.'};
+  }
+  // CITA (general → Miriam u el equipo)
+  if(has('cita','reservar','reserva','agendar','pedir hora','coger hora','primera consulta','apuntarme','quiero empezar')){
+    return {badge:'cita', sys:'📋 El asistente propone hueco y agenda la cita, sin pasar por Miriam.',
+      html:'¡Claro! Te ayudo a reservar tu primera consulta. 🥗\n\nPara asignarte a la nutricionista que mejor encaje, ¿tu consulta es por algo <b>general</b>, <b>deportivo</b>, <b>digestivo</b> o <b>embarazo/lactancia</b>?\n\nMientras, te adelanto huecos generales esta semana:\n• <b>Martes 10:00</b>\n• <b>Miércoles 17:30</b>\n• <b>Viernes 12:00</b>\n\nDime tu <b>nombre</b> y el motivo y te la dejo agendada al momento.'};
+  }
+  // PRECIO
+  if(has('precio','cuesta','cuánto','cuanto','vale','tarifa','coste','pagar','bono','sesión','sesion','bizum')){
+    return {badge:'info',
+      html:'Te paso nuestras tarifas:\n\n💶 <b>Primera consulta + plan personalizado:</b> 65 €\n💶 <b>Consulta de seguimiento:</b> 40 €\n💶 <b>Bono de 4 seguimientos:</b> 145 €\n\nIncluye tu plan en la app y ajustes durante el proceso. El pago es por <b>Bizum o transferencia</b>. 💳\n\n¿Quieres que te agende la primera consulta?'};
+  }
+  // CENTROS / UBICACIÓN
+  if(has('centro','dónde','donde','ubicaci','direcci','llegar','montecarmelo','mirasierra','presencial')){
+    return {badge:'info',
+      html:'Tenemos <b>dos centros en Madrid</b>: 📍 <b>Montecarmelo</b> y 📍 <b>Mirasierra</b>, y también atendemos <b>online</b> por videollamada.\n\n¿En cuál te vendría mejor? Te agendo en el centro que prefieras.'};
+  }
+  // ONLINE
+  if(has('online','videollamada','a distancia','por videoll','no presencial','telemátic','telematic')){
+    return {badge:'info',
+      html:'¡Sí! 💻 Atendemos tanto <b>presencial</b> (Montecarmelo y Mirasierra) como <b>online</b> por videollamada, con el mismo plan personalizado y seguimiento.\n\n¿Prefieres tu consulta presencial u online? Te la agendo como quieras.'};
+  }
+  // APP / DIETA
+  if(has('app','dieto','aplicación','aplicacion','dieta','plan','menú','menu','cómo funciona','como funciona')){
+    return {badge:'info',
+      html:'Trabajamos tu plan a través de nuestra app 📲, donde tendrás tu <b>dieta personalizada</b>, recetas y seguimiento entre consultas.\n\nNo es una dieta genérica: la nutricionista la adapta a ti y la va ajustando. ¿Te agendo la primera consulta para empezar?'};
+  }
+  // CAMBIAR / ANULAR
+  if(has('cambiar','anular','cancelar','mover','aplazar','no puedo ir')){
+    return {badge:'',
+      html:'Sin problema, te ayudo a cambiar tu cita. 👍\n\nDime tu <b>nombre</b> y el día que tenías reservado, y te ofrezco nuevos huecos para reagendar al momento.'};
+  }
+  // HABLAR CON PERSONA
+  if(has('persona','humano','hablar con','miriam','nutricionista en persona','reclamac','queja','caso especial')){
+    return {badge:'pers', sys:'🙋 Lo personal o sensible se DERIVA a una persona del equipo. El trato humano no se pierde.',
+      html:'Por supuesto. 🙌 Esto se lo paso a una persona del equipo para que te atienda personalmente.\n\n¿Me dejas tu <b>nombre</b> y un <b>teléfono</b>? En cuanto estén disponibles te contactan ellas mismas.'};
+  }
+  // GRACIAS
+  if(has('gracias','genial','perfecto','vale','ok','adiós','adios','hasta luego')){
+    return {badge:'',
+      html:'¡A ti! 😊 Tu cita queda confirmada y te enviaremos un recordatorio antes. ¡Nos vemos pronto y a cuidarse! 🥗'};
+  }
+  // SALUDO
+  if(has('hola','buenas','buenos días','buenas tardes','hey','qué tal','que tal')){
+    return {badge:'', sys:'🔒 Conversación sobre la API oficial de WhatsApp Business (Meta): el número de Miriam nunca se bloquea.',
+      html:'¡Hola! 👋 Soy el asistente de <b>Eres Lo Que No Comes</b>. Te ayudo al instante a reservar tu cita, resolver dudas o pasarte con el equipo.\n\nPuedo darte <b>precios</b>, asignarte a la nutricionista de tu especialidad (<b>deportiva</b>, <b>digestiva</b>, <b>embarazo</b>…) o <b>agendarte una cita</b> ahora mismo. ¿En qué te ayudo?'};
+  }
+  // DEFECTO
+  return {badge:'',
+    html:'Gracias por escribir a <b>Eres Lo Que No Comes</b>. 🥗 Te respondo al instante.\n\nPuedo ayudarte con:\n• 📅 Reservar tu cita (te asigno la nutricionista que toca)\n• 💶 Precios y bonos (pago por Bizum)\n• 🏃 Deportiva · 🩺 Digestiva · 🤰 Embarazo\n• 🙋 Pasarte con una persona del equipo\n\n¿Qué necesitas?'};
+}
+
+function enviar(txt){
+  if(!txt.trim())return; addUser(txt); input.value='';
+  typing.classList.add('show'); scroll();
+  const r=responder(txt); const delay=900+Math.min(txt.length*25,1200);
+  setTimeout(()=>{typing.classList.remove('show'); addBot(r.html,r.badge);
+    if(r.sys){setTimeout(()=>addSys(r.sys),500);}
+    // Simula el mensaje de seguimiento automático posterior
+    if(r.followup){
+      setTimeout(()=>{
+        addSys('⏱️ <b>Unas horas después…</b> — el sistema lanza el rescate temprano solo.');
+        setTimeout(()=>{
+          typing.classList.add('show');scroll();
+          setTimeout(()=>{typing.classList.remove('show');
+            addBot('¡Hola de nuevo! 😊 ¿Has podido pensar lo de empezar con tu plan nutricional?\n\nTe guardo el hueco del <b>martes a las 10:00</b> por si te animas. Solo dime "sí" y te lo confirmo. 🥗','seg');
+            setTimeout(()=>{
+              addSys('📅 <b>Y al día siguiente…</b> — último aviso amable, también automático.');
+              setTimeout(()=>{
+                typing.classList.add('show');scroll();
+                setTimeout(()=>{typing.classList.remove('show');
+                  addBot('Solo un último mensaje 💛 No quiero agobiarte. Si en algún momento quieres dar el paso, aquí estaré para agendarte con la nutricionista que mejor encaje contigo. ¡Cuídate!','seg');
+                  setTimeout(()=>addSys('✅ Así Miriam deja de perder al lead que dice "me lo pienso": el seguimiento se hace solo, en caliente, sin que el equipo toque nada.'),700);
+                },1100);
+              },1400);
+            },900);
+          },1100);
+        },1600);
+      },1600);
+    }
+  },delay);
+}
+send.addEventListener('click',()=>enviar(input.value));
+input.addEventListener('keydown',e=>{if(e.key==='Enter')enviar(input.value);});
+document.getElementById('quick').addEventListener('click',e=>{if(e.target.dataset.q)enviar(e.target.dataset.q);});
+setTimeout(()=>{typing.classList.add('show');scroll();
+  setTimeout(()=>{typing.classList.remove('show');
+    addBot('¡Hola! 👋 Soy el asistente de <b>Eres Lo Que No Comes</b>. Te atiendo al instante para reservar tu cita con la nutricionista que toca o resolver tus dudas.\n\n¿En qué puedo ayudarte?','');
+    setTimeout(()=>addSys('🔒 Funciona con la API <b>oficial</b> de WhatsApp Business (Meta): el número de Miriam nunca se bloquea.'),700);
+  },1100);},700);
+</script>
+</body>
+</html>
