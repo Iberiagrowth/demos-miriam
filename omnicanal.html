@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo · Bandeja Omnicanal · Eres Lo Que No Comes</title>
+<style>
+  :root{
+    --bg:#0a0a0c; --panel:#141416; --panel2:#1d1d20; --line:#2a2a2e;
+    --txt:#e9edef; --muted:#8696a0; --gold:#c9a84c; --green:#7cb342;
+    --wa:#25d366; --in-msg:#202c33; --out-msg:#005c4b;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; font-family:'Segoe UI',system-ui,Roboto,Helvetica,Arial,sans-serif;}
+  body{background:var(--bg); min-height:100vh; color:var(--txt); display:flex; flex-direction:column; align-items:center; padding:18px 12px;}
+
+  /* Marca */
+  .brand{display:flex; align-items:center; gap:12px; margin-bottom:14px; width:100%; max-width:1280px;}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--gold);}
+  .brand h1{font-size:18px; font-weight:600; color:#fff;}
+  .brand span{color:var(--muted); font-size:13px;}
+
+  /* Nota cabecera (API oficial + móvil) */
+  .nota{width:100%; max-width:1280px; background:var(--panel); border:1px solid var(--line);
+        border-radius:12px; padding:12px 18px; margin-bottom:16px; font-size:13px; color:var(--muted);
+        line-height:1.5; display:flex; gap:18px; flex-wrap:wrap; align-items:center;}
+  .nota .pill{display:inline-flex; align-items:center; gap:7px; background:var(--panel2);
+        border:1px solid var(--line); border-radius:20px; padding:6px 13px; font-size:12.5px;}
+  .nota b{color:var(--gold);}
+
+  /* Layout 3 columnas */
+  .app{width:100%; max-width:1280px; height:74vh; min-height:560px; background:var(--panel);
+       border:1px solid var(--line); border-radius:16px; overflow:hidden;
+       display:grid; grid-template-columns:320px 1fr 300px; box-shadow:0 24px 60px rgba(0,0,0,.55);}
+
+  /* === Columna izquierda: lista === */
+  .list{border-right:1px solid var(--line); display:flex; flex-direction:column; min-height:0; background:var(--panel);}
+  .list-head{padding:14px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between;}
+  .list-head .ttl{font-weight:600; font-size:15px;}
+  .list-head .count{background:var(--panel2); color:var(--muted); font-size:12px; padding:2px 9px; border-radius:12px;}
+  .list-scroll{flex:1; overflow-y:auto;}
+  .conv{display:flex; gap:11px; padding:12px 14px; cursor:pointer; border-bottom:1px solid #202023;
+        transition:background .12s; position:relative;}
+  .conv:hover{background:var(--panel2);}
+  .conv.active{background:var(--panel2);}
+  .conv.active::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:var(--gold);}
+  .av{width:42px;height:42px;border-radius:50%; flex-shrink:0; display:flex; align-items:center;
+      justify-content:center; font-weight:700; color:#1a1a1a; font-size:15px; position:relative;}
+  .ch-dot{position:absolute; bottom:-2px; right:-2px; width:18px;height:18px;border-radius:50%;
+      border:2px solid var(--panel); display:flex; align-items:center; justify-content:center; font-size:9px;}
+  .ch-wa{background:var(--wa);}
+  .ch-ig{background:linear-gradient(45deg,#7b2ff7,#e1306c 50%,#f77737);}
+  .conv .body{flex:1; min-width:0;}
+  .conv .row1{display:flex; justify-content:space-between; align-items:center; gap:8px;}
+  .conv .nm{font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .conv .hr{font-size:11px; color:var(--muted); flex-shrink:0;}
+  .conv .preview{font-size:12.5px; color:var(--muted); margin:3px 0 6px; white-space:nowrap;
+      overflow:hidden; text-overflow:ellipsis;}
+  .tag{display:inline-block; font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:6px;}
+  .tag-bot{background:#1c2a3a; color:#6db3ff; border:1px solid #284a6b;}
+  .tag-human{background:#3a2c1a; color:var(--gold); border:1px solid #5b4524;}
+  .tag-ok{background:#1d2a26; color:var(--green); border:1px solid #2c4634;}
+
+  /* === Columna central: conversación === */
+  .conv-pane{display:flex; flex-direction:column; min-height:0; background:var(--bg);}
+  .cp-head{padding:13px 18px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:12px; background:var(--panel);}
+  .cp-head .av{width:40px;height:40px;}
+  .cp-head .info{flex:1; min-width:0;}
+  .cp-head .nm{font-weight:600; font-size:15px;}
+  .cp-head .sub{font-size:12px; color:var(--muted); display:flex; align-items:center; gap:6px; margin-top:2px;}
+  .chan-label{display:inline-flex; align-items:center; gap:5px; font-weight:600;}
+  .chan-label.wa{color:var(--wa);} .chan-label.ig{color:#e1306c;}
+  .pausebtn{background:linear-gradient(135deg,var(--gold),#a8862f); color:#1a1a1a; border:none;
+      font-weight:700; font-size:13px; padding:10px 16px; border-radius:10px; cursor:pointer;
+      display:flex; align-items:center; gap:7px; transition:.15s; white-space:nowrap;}
+  .pausebtn:hover{filter:brightness(1.08);}
+  .pausebtn:active{transform:scale(.97);}
+  .pausebtn.taken{background:linear-gradient(135deg,#7cb342,#558b2f); color:#fff;}
+
+  .state-bar{padding:8px 18px; font-size:12.5px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:8px; background:#11161a;}
+  .state-bar.bot{color:#6db3ff;}
+  .state-bar.human{color:var(--gold);}
+
+  .chat{flex:1; overflow-y:auto; padding:18px 22px; display:flex; flex-direction:column; gap:9px;
+      background:linear-gradient(rgba(11,20,26,.4),rgba(11,20,26,.4));}
+  .day{align-self:center; background:#182229; color:var(--muted); font-size:11.5px; padding:5px 12px; border-radius:8px; margin:2px 0 6px;}
+  .msg{max-width:74%; padding:9px 13px; border-radius:11px; font-size:14px; line-height:1.45;
+      white-space:pre-wrap; word-wrap:break-word; animation:pop .18s ease;}
+  .in{align-self:flex-start; background:var(--in-msg); border-top-left-radius:3px;}
+  .out{align-self:flex-end; background:var(--out-msg); border-top-right-radius:3px;}
+  .msg .meta{display:block; font-size:10px; color:rgba(233,237,239,.55); text-align:right; margin-top:4px;}
+  .ia-badge{display:inline-block; font-size:9.5px; font-weight:700; background:#1c2a3a; color:#6db3ff;
+      border:1px solid #284a6b; padding:1px 7px; border-radius:5px; margin-bottom:5px;}
+  .human-badge{display:inline-block; font-size:9.5px; font-weight:700; background:#3a2c1a; color:var(--gold);
+      border:1px solid #5b4524; padding:1px 7px; border-radius:5px; margin-bottom:5px;}
+  .note{align-self:center; background:#2a2410; color:#e6cf8f; border:1px dashed #5b4524; font-size:11.5px;
+      padding:7px 13px; border-radius:9px; max-width:88%; text-align:center; line-height:1.4;}
+  @keyframes pop{from{opacity:0; transform:translateY(6px);} to{opacity:1;}}
+
+  .inputbar{padding:12px 18px; border-top:1px solid var(--line); display:flex; gap:10px; align-items:center; background:var(--panel);}
+  .inputbar input{flex:1; background:var(--panel2); border:1px solid var(--line); outline:none; color:var(--txt);
+      padding:11px 16px; border-radius:22px; font-size:14px;}
+  .inputbar input::placeholder{color:var(--muted);}
+  .inputbar .send{background:var(--green); border:none; width:44px;height:44px;border-radius:50%; color:#fff;
+      font-size:17px; cursor:pointer; display:flex; align-items:center; justify-content:center;}
+  .inputbar .send:active{transform:scale(.92);}
+
+  /* === Columna derecha: info contacto === */
+  .info-pane{border-left:1px solid var(--line); overflow-y:auto; background:var(--panel);}
+  .ip-top{padding:22px 18px 16px; text-align:center; border-bottom:1px solid var(--line);}
+  .ip-top .av{width:64px;height:64px; margin:0 auto 12px; font-size:22px;}
+  .ip-top .nm{font-weight:600; font-size:17px;}
+  .ip-top .chan{font-size:12.5px; margin-top:4px;}
+  .ip-sec{padding:16px 18px; border-bottom:1px solid var(--line);}
+  .ip-sec h4{font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--muted); margin-bottom:11px; font-weight:600;}
+  .field{display:flex; justify-content:space-between; gap:10px; margin-bottom:9px; font-size:13px;}
+  .field .k{color:var(--muted);}
+  .field .v{text-align:right; font-weight:500;}
+  .lead-state{display:inline-block; font-size:12px; font-weight:600; padding:4px 11px; border-radius:7px;}
+  .ls-nuevo{background:#1c2a3a; color:#6db3ff; border:1px solid #284a6b;}
+  .ls-seg{background:#3a2c1a; color:var(--gold); border:1px solid #5b4524;}
+  .ls-pac{background:#1d2a26; color:var(--green); border:1px solid #2c4634;}
+  .assigned{display:flex; align-items:center; gap:10px; background:var(--panel2); border:1px solid var(--line);
+      border-radius:10px; padding:10px 12px;}
+  .assigned .ava{width:34px;height:34px;border-radius:50%; background:linear-gradient(135deg,var(--gold),#8a7330);
+      display:flex; align-items:center; justify-content:center; font-weight:700; color:#1a1a1a; font-size:13px;}
+  .assigned .nm2{font-weight:600; font-size:13.5px;}
+  .assigned .esp{font-size:11.5px; color:var(--muted);}
+  .labels{display:flex; flex-wrap:wrap; gap:7px;}
+  .lbl{font-size:11.5px; padding:4px 10px; border-radius:14px; background:var(--panel2); border:1px solid var(--line); color:var(--txt);}
+
+  .footer{width:100%; max-width:1280px; text-align:center; color:#555; font-size:11px; margin-top:14px;}
+
+  @media(max-width:980px){
+    .app{grid-template-columns:1fr; height:auto;}
+    .list,.info-pane{max-height:300px;}
+    .conv-pane{min-height:480px;}
+  }
+</style>
+</head>
+<body>
+
+  <div class="brand">
+    <div class="dot"></div>
+    <h1>Iberia Growth</h1>
+    <span>· Demo de la bandeja omnicanal para Eres Lo Que No Comes</span>
+  </div>
+
+  <div class="nota">
+    <span class="pill">🔒 WhatsApp con <b>API oficial de Meta</b> · sin riesgo para tu número</span>
+    <span class="pill">📱 Todo tu equipo lo ve desde el <b>móvil en tiempo real</b></span>
+    <span class="pill">🤖 El bot hace lo repetitivo · 🙋 lo personal pasa a una persona <b>con un clic</b></span>
+  </div>
+
+  <div class="app">
+
+    <!-- IZQUIERDA -->
+    <div class="list">
+      <div class="list-head">
+        <div class="ttl">📥 Bandeja del equipo</div>
+        <div class="count" id="openCount">7 abiertas</div>
+      </div>
+      <div class="list-scroll" id="convList"></div>
+    </div>
+
+    <!-- CENTRO -->
+    <div class="conv-pane">
+      <div class="cp-head">
+        <div class="av" id="cpAv">--</div>
+        <div class="info">
+          <div class="nm" id="cpName">—</div>
+          <div class="sub" id="cpSub"></div>
+        </div>
+        <button class="pausebtn" id="pauseBtn">⏸ Pausar bot / Intervenir</button>
+      </div>
+      <div class="state-bar" id="stateBar"></div>
+      <div class="chat" id="chat"></div>
+      <div class="inputbar">
+        <input id="msgInput" type="text" placeholder="Escribe un mensaje para responder tú…" autocomplete="off">
+        <button class="send" id="sendBtn">➤</button>
+      </div>
+    </div>
+
+    <!-- DERECHA -->
+    <div class="info-pane">
+      <div class="ip-top">
+        <div class="av" id="ipAv">--</div>
+        <div class="nm" id="ipName">—</div>
+        <div class="chan" id="ipChan"></div>
+      </div>
+      <div class="ip-sec">
+        <h4>Datos de contacto</h4>
+        <div class="field"><span class="k">Nombre</span><span class="v" id="ipDataName">—</span></div>
+        <div class="field"><span class="k" id="ipContactK">Contacto</span><span class="v" id="ipContact">—</span></div>
+        <div class="field"><span class="k">Canal de origen</span><span class="v" id="ipOrigin">—</span></div>
+      </div>
+      <div class="ip-sec">
+        <h4>Nutricionista asignada</h4>
+        <div class="assigned">
+          <div class="ava" id="ipNutAv">A</div>
+          <div>
+            <div class="nm2" id="ipNutName">—</div>
+            <div class="esp" id="ipNutEsp">—</div>
+          </div>
+        </div>
+      </div>
+      <div class="ip-sec">
+        <h4>Estado del lead</h4>
+        <span class="lead-state" id="ipLead">—</span>
+      </div>
+      <div class="ip-sec">
+        <h4>Etiquetas</h4>
+        <div class="labels" id="ipLabels"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer">Demo · Iberia Growth · No es el sistema real, es una recreación para mostrar el funcionamiento.</div>
+
+<script>
+// === Colores de avatar por inicial ===
+const avColors=['#c9a84c','#7cb342','#6db3ff','#e1306c','#f77737','#9b59b6','#1abc9c','#e67e22'];
+function avColor(name){let s=0;for(const c of name)s+=c.charCodeAt(0);return avColors[s%avColors.length];}
+
+// === Datos de conversaciones ===
+const convs=[
+  {
+    id:1, name:'Lucía Hernández', channel:'wa', hr:'12:41',
+    preview:'¿Me podéis cambiar la cita del jueves?',
+    tag:'bot', contactType:'Teléfono', contact:'+34 612 88 41 02',
+    origin:'WhatsApp', nut:'Ana', esp:'Nutrición deportiva',
+    lead:'pac', leadTxt:'Paciente',
+    labels:['Deportiva','Cambio de cita','Recurrente'],
+    chat:[
+      {who:'in', t:'Hola, soy paciente vuestra. ¿Me podéis cambiar la cita del jueves?', time:'12:38'},
+      {who:'out', ia:true, t:'¡Hola Lucía! Claro 😊 Tienes cita el jueves a las 18:00 con Ana. ¿Para qué día te viene mejor?', time:'12:38'},
+      {who:'in', t:'El martes que viene por la tarde si puede ser', time:'12:40'},
+      {who:'out', ia:true, t:'Perfecto. Te puedo ofrecer martes 16 a las 17:30 o a las 18:30 con Ana. ¿Cuál prefieres?', time:'12:40'},
+      {who:'in', t:'Las 18:30 genial 🙌', time:'12:41'},
+      {who:'out', ia:true, t:'¡Hecho! Cita confirmada para el martes 16 a las 18:30 con Ana. Te llegará un recordatorio el día antes. ¡Hasta entonces! 💚', time:'12:41'}
+    ]
+  },
+  {
+    id:2, name:'Marcos Ferreira', channel:'ig', hr:'12:30',
+    preview:'Vi vuestro post sobre digestiones pesadas…',
+    tag:'human', contactType:'Instagram', contact:'@marcosfer_fit',
+    origin:'Instagram', nut:'Cristina', esp:'Salud digestiva',
+    lead:'nuevo', leadTxt:'Nuevo',
+    labels:['Digestiva','Primera consulta','Desde IG'],
+    chat:[
+      {who:'in', t:'¡Hola! Vi vuestro post sobre digestiones pesadas y me siento súper identificado. Llevo años fatal con esto y ningún médico me da una solución.', time:'12:24'},
+      {who:'out', ia:true, t:'¡Hola Marcos! Gracias por escribirnos 🙌 Entiendo perfectamente cómo te sientes. Trabajamos mucho la salud digestiva. ¿Quieres que te cuente cómo sería una primera consulta?', time:'12:25'},
+      {who:'in', t:'Sí, pero la verdad es que me gustaría hablar con una persona, tengo bastantes dudas y mi caso es un poco complicado…', time:'12:28'},
+      {who:'note', t:'🤖 El bot ha detectado un caso personal y lo ha derivado al equipo. Esperando a que un nutricionista intervenga.', time:'12:29'}
+    ]
+  },
+  {
+    id:3, name:'Paula Domínguez', channel:'wa', hr:'11:58',
+    preview:'¿Lleváis seguimiento durante el embarazo?',
+    tag:'human', contactType:'Teléfono', contact:'+34 699 20 17 55',
+    origin:'WhatsApp', nut:'Cristina', esp:'Nutrición en el embarazo',
+    lead:'nuevo', leadTxt:'Nuevo',
+    labels:['Embarazo','Primera consulta','Urgente'],
+    chat:[
+      {who:'in', t:'Buenos días, estoy embarazada de 14 semanas y me gustaría llevar una alimentación bien cuidada. ¿Lleváis seguimiento durante el embarazo?', time:'11:52'},
+      {who:'out', ia:true, t:'¡Buenos días Paula y enhorabuena! 🤰 Sí, tenemos seguimiento específico para el embarazo con Cristina, que está especializada justo en esto. ¿Te gustaría que te asignemos una primera cita con ella?', time:'11:53'},
+      {who:'in', t:'Sí me encantaría, aunque tengo algunas dudas médicas concretas que querría comentar antes con alguien del equipo', time:'11:57'},
+      {who:'note', t:'🙋 Caso de embarazo con dudas médicas. El bot lo marca como "Requiere persona" y avisa a Cristina.', time:'11:58'}
+    ]
+  },
+  {
+    id:4, name:'Javier Otero', channel:'ig', hr:'11:20',
+    preview:'¿Cuánto cuesta la primera consulta?',
+    tag:'ok', contactType:'Instagram', contact:'@javi.otero',
+    origin:'Instagram', nut:'Ana', esp:'Nutrición deportiva',
+    lead:'seg', leadTxt:'En seguimiento',
+    labels:['Deportiva','Precio','Pendiente de reservar'],
+    chat:[
+      {who:'in', t:'¡Hola! ¿Cuánto cuesta la primera consulta de nutrición deportiva?', time:'11:15'},
+      {who:'out', ia:true, t:'¡Hola Javier! La primera consulta de nutrición deportiva con Ana es de 60€ e incluye estudio completo + plan personalizado. Las revisiones son de 40€. ¿Quieres que te reserve una?', time:'11:16'},
+      {who:'in', t:'Perfecto, me lo pienso y os digo. ¡Gracias!', time:'11:19'},
+      {who:'out', ia:true, t:'¡Sin problema! Aquí estaremos cuando quieras 💪 Que tengas un buen día.', time:'11:20'}
+    ]
+  },
+  {
+    id:5, name:'Elena Vázquez', channel:'wa', hr:'10:47',
+    preview:'Confirmo la cita de mañana, ¡gracias!',
+    tag:'ok', contactType:'Teléfono', contact:'+34 654 33 90 28',
+    origin:'WhatsApp', nut:'Victoria', esp:'Salud digestiva',
+    lead:'pac', leadTxt:'Paciente',
+    labels:['Digestiva','Recordatorio','Recurrente'],
+    chat:[
+      {who:'out', ia:true, t:'Hola Elena 👋 Te recordamos tu cita de mañana a las 10:00 con Victoria. ¿Nos confirmas que vienes?', time:'10:45'},
+      {who:'in', t:'Confirmo la cita de mañana, ¡gracias!', time:'10:47'},
+      {who:'out', ia:true, t:'¡Genial! Apuntado ✅ Nos vemos mañana. Recuerda venir en ayunas para la bioimpedancia 😉', time:'10:47'}
+    ]
+  },
+  {
+    id:6, name:'Sergio Blanco', channel:'ig', hr:'10:12',
+    preview:'Quiero ganar masa muscular, ¿me ayudáis?',
+    tag:'bot', contactType:'Instagram', contact:'@sergio_blanco93',
+    origin:'Instagram', nut:'Ana', esp:'Nutrición deportiva',
+    lead:'nuevo', leadTxt:'Nuevo',
+    labels:['Deportiva','Masa muscular','Desde IG'],
+    chat:[
+      {who:'in', t:'Buenas, quiero ganar masa muscular y comer mejor para entrenar. ¿Me ayudáis?', time:'10:10'},
+      {who:'out', ia:true, t:'¡Claro que sí Sergio! 💪 Justo Ana es nuestra nutricionista deportiva y trabaja mucho la ganancia de masa muscular. ¿Entrenas ya en gimnasio? Así te oriento mejor.', time:'10:11'},
+      {who:'in', t:'Sí, 4 días a la semana desde hace un año', time:'10:12'},
+      {who:'out', ia:true, t:'¡Perfecto, gran base! Con un plan ajustado a tus entrenos los resultados se notan mucho. ¿Te reservo una primera consulta con Ana para valorarlo todo?', time:'10:12'}
+    ]
+  },
+  {
+    id:7, name:'Nuria Castro', channel:'wa', hr:'09:34',
+    preview:'Hinchazón y gases después de comer…',
+    tag:'human', contactType:'Teléfono', contact:'+34 677 41 60 19',
+    origin:'WhatsApp', nut:'Victoria', esp:'Salud digestiva',
+    lead:'seg', leadTxt:'En seguimiento',
+    labels:['Digestiva','SIBO','Caso sensible'],
+    chat:[
+      {who:'in', t:'Hola, llevo meses con muchísima hinchazón y gases después de comer, creo que puede ser SIBO. Estoy un poco desesperada la verdad…', time:'09:30'},
+      {who:'out', ia:true, t:'Hola Nuria, siento que lo estés pasando así 💙 Es justo el tipo de caso que tratamos con Victoria, especializada en salud digestiva. Por lo que cuentas, prefiero que te atienda directamente una persona del equipo para verlo con calma.', time:'09:31'},
+      {who:'note', t:'🙋 Caso sensible derivado a Victoria. El trato humano se mantiene; el bot solo ha hecho el primer recibimiento.', time:'09:32'}
+    ]
+  }
+];
+
+// === Mapas de estado / nutricionista ===
+const tagMap={
+  bot:{cls:'tag-bot', txt:'🤖 Bot atendiendo'},
+  human:{cls:'tag-human', txt:'🙋 Requiere persona'},
+  ok:{cls:'tag-ok', txt:'✅ Resuelto'}
+};
+const leadMap={
+  nuevo:{cls:'ls-nuevo'}, seg:{cls:'ls-seg'}, pac:{cls:'ls-pac'}
+};
+
+// Estado "intervenido" por conversación (toggle del botón)
+const taken={};
+
+// === Render lista ===
+const convList=document.getElementById('convList');
+function chanDot(ch){
+  return ch==='wa'
+    ? '<span class="ch-dot ch-wa">✓</span>'
+    : '<span class="ch-dot ch-ig">📷</span>';
+}
+function renderList(){
+  convList.innerHTML='';
+  convs.forEach(c=>{
+    const tg = taken[c.id] ? {cls:'tag-human', txt:'👤 Tú estás atendiendo'} : tagMap[c.tag];
+    const el=document.createElement('div');
+    el.className='conv'+(c.id===current?' active':'');
+    el.onclick=()=>open(c.id);
+    el.innerHTML=`
+      <div class="av" style="background:${avColor(c.name)}">${c.name[0]}${chanDot(c.channel)}</div>
+      <div class="body">
+        <div class="row1"><span class="nm">${c.name}</span><span class="hr">${c.hr}</span></div>
+        <div class="preview">${c.preview}</div>
+        <span class="tag ${tg.cls}">${tg.txt}</span>
+      </div>`;
+    convList.appendChild(el);
+  });
+}
+
+// === Abrir conversación en el centro + panel derecho ===
+let current=2;
+function chanInfo(ch){
+  return ch==='wa'
+    ? {cls:'wa', label:'WhatsApp', ico:'🟢'}
+    : {cls:'ig', label:'Instagram', ico:'📷'};
+}
+function open(id){
+  current=id;
+  const c=convs.find(x=>x.id===id);
+  const ci=chanInfo(c.channel);
+
+  // Cabecera centro
+  const av=document.getElementById('cpAv');
+  av.textContent=c.name[0]; av.style.background=avColor(c.name);
+  av.innerHTML=c.name[0]+chanDot(c.channel);
+  document.getElementById('cpName').textContent=c.name;
+  document.getElementById('cpSub').innerHTML=
+    `<span class="chan-label ${ci.cls}">${ci.ico} ${ci.label}</span> · ${c.contact}`;
+
+  // Chat
+  const chat=document.getElementById('chat');
+  chat.innerHTML='<div class="day">HOY</div>';
+  c.chat.forEach(m=>{
+    if(m.who==='note'){
+      chat.innerHTML+=`<div class="note">${m.t}</div>`;
+    } else {
+      const badge = m.who==='out'
+        ? (m.human ? '<span class="human-badge">👤 EQUIPO</span>' : (m.ia?'<span class="ia-badge">IA · BOT</span>':''))
+        : '';
+      chat.innerHTML+=`<div class="msg ${m.who==='in'?'in':'out'}">${badge?badge+'<br>':''}${m.t}<span class="meta">${m.time}${m.who==='out'?' ✓✓':''}</span></div>`;
+    }
+  });
+  chat.scrollTop=chat.scrollHeight;
+
+  // Botón pausar
+  applyState();
+
+  // Panel derecho
+  const ipAv=document.getElementById('ipAv');
+  ipAv.textContent=c.name[0]; ipAv.style.background=avColor(c.name);
+  document.getElementById('ipName').textContent=c.name;
+  document.getElementById('ipChan').innerHTML=`<span class="chan-label ${ci.cls}">${ci.ico} ${ci.label}</span>`;
+  document.getElementById('ipDataName').textContent=c.name;
+  document.getElementById('ipContactK').textContent=c.contactType;
+  document.getElementById('ipContact').textContent=c.contact;
+  document.getElementById('ipOrigin').textContent=c.origin;
+
+  document.getElementById('ipNutAv').textContent=c.nut[0];
+  document.getElementById('ipNutName').textContent=c.nut;
+  document.getElementById('ipNutEsp').textContent=c.esp;
+
+  const lead=document.getElementById('ipLead');
+  lead.className='lead-state '+leadMap[c.lead].cls;
+  lead.textContent=c.leadTxt;
+
+  const labels=document.getElementById('ipLabels');
+  labels.innerHTML=c.labels.map(l=>`<span class="lbl">${l}</span>`).join('');
+
+  renderList();
+}
+
+// === Botón pausar bot / intervenir (toggle visual) ===
+const pauseBtn=document.getElementById('pauseBtn');
+const stateBar=document.getElementById('stateBar');
+function applyState(){
+  const isTaken=!!taken[current];
+  if(isTaken){
+    pauseBtn.classList.add('taken');
+    pauseBtn.innerHTML='✅ Tú estás atendiendo · Reactivar bot';
+    stateBar.className='state-bar human';
+    stateBar.innerHTML='👤 <b style="margin:0 4px">Tú estás atendiendo</b> — el bot está en pausa en esta conversación. El trato es 100% humano.';
+  } else {
+    pauseBtn.classList.remove('taken');
+    pauseBtn.innerHTML='⏸ Pausar bot / Intervenir';
+    stateBar.className='state-bar bot';
+    stateBar.innerHTML='🤖 El bot está atendiendo automáticamente. Pulsa <b style="margin:0 4px">Pausar bot / Intervenir</b> para responder tú.';
+  }
+}
+pauseBtn.onclick=()=>{ taken[current]=!taken[current]; applyState(); renderList(); };
+
+// === Enviar mensaje (interactividad: si intervienes, escribes como equipo) ===
+const msgInput=document.getElementById('msgInput'), sendBtn=document.getElementById('sendBtn');
+function send(){
+  const t=msgInput.value.trim(); if(!t)return;
+  const c=convs.find(x=>x.id===current);
+  const human=!!taken[current];
+  c.chat.push({who:'out', ia:!human, human:human, t:t, time:new Date().toTimeString().slice(0,5)});
+  c.preview=t; msgInput.value='';
+  open(current);
+}
+sendBtn.onclick=send;
+msgInput.addEventListener('keydown',e=>{if(e.key==='Enter')send();});
+
+// Arranque: abrir la conversación que "requiere persona" para que se vea el caso
+open(2);
+</script>
+</body>
+</html>
